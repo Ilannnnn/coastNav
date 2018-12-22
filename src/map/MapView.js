@@ -29,7 +29,6 @@ class MapView extends Component {
     _editableFG = null
 
     state = {
-        steps: stepService.getSteps(),
         selectedStep: undefined,
         newStep: {
             isDrawing: false,
@@ -76,7 +75,7 @@ class MapView extends Component {
         }
         // Do whatever else you need to. (save to db; etc)
         debugger;
-        // handleNewStep
+        // handleNewStep()
         this._onChange();
     }
 
@@ -115,9 +114,7 @@ class MapView extends Component {
         return (<section className="MapViewContainer">
             <Map id="map" key="mymap"
                 ref={this.setLeafletMapRef}
-                center={center} zoom={10}
-                //onClick={this.onMapClick.bind(this)}
-                onMouseMove={this.onDrawingMove.bind(this)}>
+                center={center} zoom={10}>
 
                 <FeatureGroup ref={(reactFGref) => { this._onFeatureGroupReady(reactFGref); }}>
                     <EditControl
@@ -131,7 +128,13 @@ class MapView extends Component {
                         onDeleteStart={this._onDeleteStart}
                         onDeleteStop={this._onDeleteStop}
                         draw={{
-                            rectangle: false
+                            polygon: false,
+                            rectangle: false,
+                            polyline: {
+                                shapeOptions: {
+                                    color: 'black'
+                                }
+                            }
                         }}
                     />
                 </FeatureGroup>
@@ -164,7 +167,7 @@ class MapView extends Component {
     _onFeatureGroupReady = (reactFGref) => {
         
         if (reactFGref) {
-            
+            debugger;
             // store the ref for future access to content
             this._editableFG = reactFGref;
         }
@@ -199,7 +202,6 @@ class MapView extends Component {
     }
 
     onSideBarClick(event) {
-        console.debug(event);
         event.originalEvent.preventDefault();
         event.originalEvent.view.L.DomEvent.stopPropagation(event);
     }
@@ -234,97 +236,6 @@ class MapView extends Component {
                 return step.id === stepId;
             })
         );
-    }
-
-    escFunction(event) {
-        if (event.keyCode === 27) {
-            this.handleEscPress();
-        }
-    }
-
-    onDrawingMove(event) {
-        event.originalEvent.preventDefault();
-        event.originalEvent.stopPropagation();
-        if (this.state.newStep.isDrawing) {
-            // Update current selected step
-            let updatedSteps = this.state.steps;
-            let updatedSelectedStep = updatedSteps.find(step => {
-                return step.id === this.state.selectedStep.id;
-            });
-
-            updatedSelectedStep = Object.assign(updatedSelectedStep, {
-                positions: [
-                    updatedSelectedStep.positions[0],
-                    [
-                        Number((event.latlng.lat).toFixed(COOREDINATES_DEPTH)),
-                        Number((event.latlng.lng).toFixed(COOREDINATES_DEPTH))
-                    ]
-                ]
-            });
-
-            this.setState({
-                steps: updatedSteps,
-                selectedStep: updatedSelectedStep,
-                mouseInfo: { ...event.latlng },
-            });
-        }
-        else {
-            this.setState({ mouseInfo: { ...event.latlng } });
-        }
-    }
-
-    onMapClick(event) {
-        // Isolate this event
-        event.originalEvent.preventDefault();
-        event.originalEvent.view.L.DomEvent.stopPropagation(event);
-
-        if (!this.state.newStep.isDrawing) {
-            // Create a new step, stating at click position
-            let newStep = stepService.getNewStepFrom(
-                Number((event.latlng.lat).toFixed(COOREDINATES_DEPTH)),
-                Number((event.latlng.lng).toFixed(COOREDINATES_DEPTH))
-            );
-            let updatedSteps = [...this.state.steps, newStep];
-
-            // Mark the new step as the selected step      
-            this.setState({
-                newStep: { isDrawing: true },
-                steps: updatedSteps,
-                selectedStep: newStep,
-            });
-        }
-        else {
-            // Finished drawing -> Update current selected step
-            let updatedSteps = this.state.steps;
-            let updatedSelectedStep = updatedSteps.find(step => {
-                return this.state.selectedStep && step.id === this.state.selectedStep.id;
-            });
-            updatedSelectedStep.type = 1;
-
-            this.setState({
-                newStep: { isDrawing: false },
-                steps: updatedSteps,
-                selectedStep: updatedSelectedStep,
-            });
-        }
-    }
-
-    handleNewStep(from, to, type = 0) {
-        let newStep = stepService.getNewStep(from, to, type);
-        this.setState({
-            steps: [...this.state.steps, newStep],
-            selectedStep: newStep,
-        });
-    }
-
-    handleRemoveStep(stepId) {
-        let updatedSteps = _.filter(this.state.steps, (step) => {
-            return step.id !== stepId;
-        });
-        this.setState({
-            /* Update selected view */
-            steps: updatedSteps,
-        });
     }
 
     handleEditorSave(updatedStepId, changes) {
