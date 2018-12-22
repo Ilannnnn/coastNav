@@ -2,6 +2,10 @@
     height: 600px;
 }
 
+.sr-only {
+    display: none;
+}
+
 .stepsContainer {
     position: fixed;
     /* top: 0; */
