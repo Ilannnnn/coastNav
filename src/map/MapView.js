@@ -74,8 +74,7 @@ class MapView extends Component {
             console.log("_onCreated: something else created:", type, e);
         }
         // Do whatever else you need to. (save to db; etc)
-        debugger;
-        // handleNewStep()
+
         this._onChange();
     }
 
@@ -116,6 +115,11 @@ class MapView extends Component {
                 ref={this.setLeafletMapRef}
                 center={center} zoom={10}>
 
+                <TileLayer
+                    attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+
                 <FeatureGroup ref={(reactFGref) => { this._onFeatureGroupReady(reactFGref); }}>
                     <EditControl
                         position='topright'
@@ -132,7 +136,19 @@ class MapView extends Component {
                             rectangle: false,
                             polyline: {
                                 shapeOptions: {
-                                    color: 'black'
+                                    color: 'black',
+                                    opacity: 0.8,
+                                    weight: 5,
+                                },
+                                maxPoints: 2,
+                                allowIntersection: false,
+                            },
+                        }}
+                        edit={{
+                            edit: {
+                                selectedPathOptions: {
+                                    maintainColor: true,
+                                    opacity: 0.3
                                 }
                             }
                         }}
@@ -155,19 +171,14 @@ class MapView extends Component {
                     </Tab>
                 </Sidebar>
 
-                <TileLayer
-                    attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                {this.getNavSteps()}
             </Map>
         </section>)
     }
 
     _onFeatureGroupReady = (reactFGref) => {
-        
+
         if (reactFGref) {
-            debugger;
+
             // store the ref for future access to content
             this._editableFG = reactFGref;
         }
@@ -177,14 +188,17 @@ class MapView extends Component {
 
         // this._editableFG contains the edited geometry, which can be manipulated through the leaflet API
 
-        const { onChange } = this.props;
-
-        if (!this._editableFG || !onChange) {
+        if (!this._editableFG) {
             return;
         }
 
         const geojsonData = this._editableFG.leafletElement.toGeoJSON();
-        onChange(geojsonData);
+        this.onChange(geojsonData);
+    }
+
+    onChange(geoData) {
+        let features = geoData.features;
+        console.log("Changes happened:", features);
     }
 
     setLeafletMapRef = map => (this._leafletMap = map && map.leafletElement);
