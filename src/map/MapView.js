@@ -18,18 +18,15 @@ const center = [32.374, 35.116];
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.0/images/marker-icon.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.0/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.0/images/marker-shadow.png',
+    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.0/images/marker-icon.png',
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.0/images/marker-icon.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.0.0/images/marker-shadow.png',
 });
-
-//
-
-let polyline;
 
 class MapView extends Component {
 
-    leafletMap = null;
+    _leafletMap = null;
+    _editableFG = null
 
     state = {
         steps: stepService.getSteps(),
@@ -45,19 +42,8 @@ class MapView extends Component {
         selected: 'home',
     }
 
-    constructor(props) {
-        super(props);
-        this.escFunction = this.escFunction.bind(this);
-    }
-
-    componentDidMount() {
-        document.addEventListener("keydown", this.escFunction, false);
-    }
-    componentWillUnmount() {
-        document.removeEventListener("keydown", this.escFunction, false);
-    }
     componentDidUpdate(prevProps, prevState) {
-        this.leafletMap.invalidateSize();
+        this._leafletMap.invalidateSize();
         // Update collapse flag if selected step changed
         if (this.state.selectedStep !== prevState.selectedStep) {
             this.setState({
@@ -89,7 +75,8 @@ class MapView extends Component {
             console.log("_onCreated: something else created:", type, e);
         }
         // Do whatever else you need to. (save to db; etc)
-
+        debugger;
+        // handleNewStep
         this._onChange();
     }
 
@@ -131,7 +118,7 @@ class MapView extends Component {
                 center={center} zoom={10}
                 //onClick={this.onMapClick.bind(this)}
                 onMouseMove={this.onDrawingMove.bind(this)}>
-                
+
                 <FeatureGroup ref={(reactFGref) => { this._onFeatureGroupReady(reactFGref); }}>
                     <EditControl
                         position='topright'
@@ -148,11 +135,11 @@ class MapView extends Component {
                         }}
                     />
                 </FeatureGroup>
-                
+
                 <Sidebar id="sidebar"
-                    collapsed={this.state.collapsed} 
+                    collapsed={this.state.collapsed}
                     selected={this.state.selected}
-                    onOpen={this.onSideBarOpen.bind(this)} 
+                    onOpen={this.onSideBarOpen.bind(this)}
                     onClose={this.onSideBarClose.bind(this)}
                     onClick={this.onSideBarClick.bind(this)}>
                     <Tab id="home" header="Home" icon="fa fa-home">
@@ -174,15 +161,11 @@ class MapView extends Component {
         </section>)
     }
 
-    _editableFG = null
-
     _onFeatureGroupReady = (reactFGref) => {
-
+        
         if (reactFGref) {
-
+            
             // store the ref for future access to content
-    
-            let leafletFG = reactFGref.leafletElement;
             this._editableFG = reactFGref;
         }
     }
@@ -201,7 +184,7 @@ class MapView extends Component {
         onChange(geojsonData);
     }
 
-    setLeafletMapRef = map => (this.leafletMap = map && map.leafletElement);
+    setLeafletMapRef = map => (this._leafletMap = map && map.leafletElement);
 
     /* Sidebar */
     onSideBarClose() {
@@ -259,25 +242,6 @@ class MapView extends Component {
         }
     }
 
-    /**
-     * Cancel drawing & unselect step when ESC pressed.
-     */
-    handleEscPress() {
-        if (this.state.newStep.isDrawing) {
-            let selectedStep = this.state.selectedStep;
-            let steps = [...this.state.steps];
-            _.remove(steps, step => step.id === selectedStep.id);
-
-            this.setState({
-                selectedStep: undefined,
-                steps: steps,
-                newStep: {
-                    isDrawing: false,
-                },
-            });
-        }
-    }
-
     onDrawingMove(event) {
         event.originalEvent.preventDefault();
         event.originalEvent.stopPropagation();
@@ -316,7 +280,7 @@ class MapView extends Component {
 
         if (!this.state.newStep.isDrawing) {
             // Create a new step, stating at click position
-            let newStep = stepService.getNewStep(
+            let newStep = stepService.getNewStepFrom(
                 Number((event.latlng.lat).toFixed(COOREDINATES_DEPTH)),
                 Number((event.latlng.lng).toFixed(COOREDINATES_DEPTH))
             );
@@ -345,9 +309,8 @@ class MapView extends Component {
         }
     }
 
-
-    handleNewStep() {
-        let newStep = stepService.getNewStep();
+    handleNewStep(from, to, type = 0) {
+        let newStep = stepService.getNewStep(from, to, type);
         this.setState({
             steps: [...this.state.steps, newStep],
             selectedStep: newStep,

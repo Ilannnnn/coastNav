@@ -26,7 +26,7 @@ export default class StepService {
         ]
     }
 
-    getNewStep = (lat = 0, lng = 0) => {
+    getNewStepFrom (lat = 0, lng = 0) {
         return {
             id: this.id++, type: 2,
             positions: [[lat, lng], [lat, lng]],
@@ -37,9 +37,14 @@ export default class StepService {
         }
     }
 
-    getNewStepAt = (x, y) => {
-        let latlng = [0,0];
-        // calc latlng by projection
-        return this.getNewStep([...latlng]);
+    getNewStep (from, to, type) {
+        return {
+            id: this.id++, type: 2,
+            positions: [from, to],
+            color: "black",
+            type: type,
+            stroke: 20,
+            marker: undefined
+        }
     }
 }
