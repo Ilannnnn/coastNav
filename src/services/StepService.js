@@ -28,10 +28,21 @@ export default class StepService {
         ]
     }
 
-    createNewStep = (lat = 0, lng = 0, stepType = StepType.GUIDELINE) => {
+    createNewStep = (lat = 0, lng = 0, stepType = StepType.GUIDELINE, magnetOptions = []) => {
+        let options = _.flattenDeep(_.map(magnetOptions, option => _.flatten(option.positions)))
+        let nearestPoint = StepService.getNearestPosition(
+            { lat, lng }, options
+        );
+        if (isNaN(nearestPoint.distance) || nearestPoint.distance > 1500) {
+            console.log("nearestPoint", nearestPoint);
+            nearestPoint = { lat, lng };
+        } else {
+            debugger;
+            nearestPoint = options[nearestPoint.key];
+        }
         let newStep = {
             id: this.id++, type: stepType,
-            positions: [{ lat, lng }, { lat, lng }],
+            positions: [nearestPoint, { lat, lng }],
         }
         if (stepType !== StepType.GUIDELINE) {
             return {
@@ -39,8 +50,13 @@ export default class StepService {
                 time: new Date(),
                 marker: { position: null, percentage: 50 }
             }
-        } 
+        }
         return newStep;
+    }
+
+    static getNearestPosition = (pos, options, offset = 2, limit = 1) => {
+        if (_.isEmpty(options)) { return { distance: 0, key: -1 }; }
+        return geolib.findNearest(pos, options);
     }
 
     static calcAngle = function (p1, p2, direction) {
@@ -63,7 +79,7 @@ export default class StepService {
         let unit = "mi";
         let dist = geolib.getDistanceSimple(p1, p2);
         dist = geolib.convertUnit('mi', dist);
-        return { dist , unit };
+        return { dist, unit };
     }
 
     /**

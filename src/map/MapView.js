@@ -307,7 +307,8 @@ class MapView extends Component {
             let newStep = stepService.createNewStep(
                 Number((event.latlng.lat).toFixed(COOREDINATES_DEPTH)),
                 Number((event.latlng.lng).toFixed(COOREDINATES_DEPTH)),
-                this.state.selectedTool.type
+                this.state.selectedTool.type,
+                this.state.steps
             );
 
             // assing the new line the current tool's options
